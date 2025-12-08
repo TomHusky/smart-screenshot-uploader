@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>扩展测试页面</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    
+    h2 {
+      color: #764ba2;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+      margin-top: 30px;
+    }
+    
+    .test-section {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    
+    .test-image {
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    
+    .long-content {
+      height: 1500px;
+      background: linear-gradient(to bottom, #fff, #f0f0f0);
+      padding: 20px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 2px solid #e0e0e0;
+    }
+    
+    code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+    }
+    
+    .highlight {
+      background: yellow;
+      padding: 2px 4px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    
+    table th,
+    table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    
+    table th {
+      background: #667eea;
+      color: white;
+    }
+    
+    table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    
+    .instructions {
+      background: #e3f2fd;
+      border-left: 4px solid #1976d2;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    
+    ul {
+      line-height: 2;
+    }
+    
+    .api-endpoint {
+      background: #263238;
+      color: #aed581;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 智能截图上传助手 - 测试页面</h1>
+    <p>这是一个用于测试Chrome扩展截图功能的示例页面。</p>
+    
+    <div class="instructions">
+      <h3>📋 测试步骤：</h3>
+      <ol>
+        <li>确保已安装"智能截图上传助手"扩展</li>
+        <li>点击扩展图标或使用快捷键进行截图</li>
+        <li>测试不同的截图模式（可见区域、自定义区域、整页）</li>
+        <li>配置HTTP请求并测试上传功能</li>
+      </ol>
+    </div>
+    
+    <h2>🎯 测试区域 1: 可见区域截图</h2>
+    <div class="test-section">
+      <p>使用 <code>Ctrl+Shift+V</code> (Mac: <code>Cmd+Shift+V</code>) 或点击"可见区域"按钮截取当前视口。</p>
+      <div class="grid">
+        <div class="card">
+          <h3>卡片 1</h3>
+          <p>这是一个测试卡片，包含一些文本内容。</p>
+        </div>
+        <div class="card">
+          <h3>卡片 2</h3>
+          <p>可以用来测试截图的清晰度和完整性。</p>
+        </div>
+        <div class="card">
+          <h3>卡片 3</h3>
+          <p>尝试截取包含这些卡片的区域。</p>
+        </div>
+      </div>
+    </div>
+    
+    <h2>✂️ 测试区域 2: 自定义区域截图</h2>
+    <div class="test-section">
+      <p>使用 <code>Ctrl+Shift+C</code> (Mac: <code>Cmd+Shift+C</code>) 激活自定义选择模式。</p>
+      <p>然后拖动鼠标选择下面的<span class="highlight">高亮文本区域</span>或任意内容。</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>功能</th>
+            <th>快捷键 (Windows)</th>
+            <th>快捷键 (Mac)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>可见区域截图</td>
+            <td>Ctrl+Shift+V</td>
+            <td>Cmd+Shift+V</td>
+          </tr>
+          <tr>
+            <td>自定义区域截图</td>
+            <td>Ctrl+Shift+C</td>
+            <td>Cmd+Shift+C</td>
+          </tr>
+          <tr>
+            <td>整页截图</td>
+            <td>Ctrl+Shift+F</td>
+            <td>Cmd+Shift+F</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <h2>📄 测试区域 3: 整页截图</h2>
+    <div class="test-section">
+      <p>使用 <code>Ctrl+Shift+F</code> (Mac: <code>Cmd+Shift+F</code>) 截取整个页面。</p>
+      <p>此页面包含大量内容，向下滚动查看更多，然后使用整页截图功能捕获完整内容。</p>
+    </div>
+    
+    <h2>🔧 测试区域 4: HTTP上传配置</h2>
+    <div class="test-section">
+      <h3>测试API端点（免费）：</h3>
+      
+      <h4>1. httpbin.org (推荐用于测试)</h4>
+      <div class="api-endpoint">
+POST https://httpbin.org/post
+Content-Type: application/json
+
+{
+  "image_data": "&lt;base64-string&gt;",
+  "filename": "screenshot.png"
+}
+      </div>
+      
+      <h4>2. 使用cURL导入示例</h4>
+      <p>复制下面的cURL命令，在扩展配置页面的"导入cURL"选项卡中粘贴：</p>
+      <div class="api-endpoint">
+curl -X POST 'https://httpbin.org/post' \
+  -H 'Content-Type: application/json' \
+  -H 'User-Agent: Screenshot-Extension/1.0' \
+  -d '{"filename": "test.png", "timestamp": "2025-12-08"}'
+      </div>
+      
+      <h4>3. FormData格式测试</h4>
+      <div class="api-endpoint">
+curl -X POST 'https://httpbin.org/post' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'filename=screenshot.png' \
+  -F 'user=testuser'
+      </div>
+      
+      <h3>验证步骤：</h3>
+      <ul>
+        <li>在扩展中配置上述API端点</li>
+        <li>截取一张图片</li>
+        <li>上传后查看响应数据</li>
+        <li>httpbin.org会返回你发送的所有数据，便于验证</li>
+      </ul>
+    </div>
+    
+    <h2>🎨 测试区域 5: 复杂内容</h2>
+    <div class="test-section">
+      <p>包含各种元素的复杂区域，用于测试截图质量：</p>
+      
+      <div style="display: flex; gap: 20px; align-items: center; margin: 20px 0;">
+        <div style="width: 100px; height: 100px; background: linear-gradient(45deg, #667eea, #764ba2); border-radius: 50%;"></div>
+        <div style="flex: 1;">
+          <h4>渐变圆形</h4>
+          <p>测试渐变和圆形元素的渲染</p>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 20px; margin: 20px 0;">
+        <div style="width: 150px; height: 100px; background: #ff6b6b; border-radius: 8px; transform: rotate(-5deg);"></div>
+        <div style="width: 150px; height: 100px; background: #4ecdc4; border-radius: 8px; transform: rotate(5deg);"></div>
+        <div style="width: 150px; height: 100px; background: #ffe66d; border-radius: 8px; transform: rotate(-3deg);"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 长内容区域用于测试整页截图 -->
+  <div class="container">
+    <h2>📜 长内容区域</h2>
+    <div class="long-content">
+      <p><strong>这是一个很长的内容区域，用于测试整页截图功能。</strong></p>
+      <p>向下滚动查看更多内容...</p>
+      
+      <div style="margin-top: 100px;">
+        <h3>中间内容</h3>
+        <p>这里是页面的中间部分。</p>
+      </div>
+      
+      <div style="margin-top: 300px;">
+        <h3>更多内容</h3>
+        <p>继续向下滚动...</p>
+      </div>
+      
+      <div style="margin-top: 300px;">
+        <h3>接近底部</h3>
+        <p>快到页面底部了。</p>
+      </div>
+      
+      <div style="margin-top: 300px;">
+        <h3>🎉 页面底部</h3>
+        <p>恭喜！如果整页截图包含了这段文字，说明功能正常工作。</p>
+        <div style="background: #4caf50; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
+          <h2>✅ 测试成功标记</h2>
+          <p>这个绿色区域应该出现在整页截图的底部</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="container">
+    <h2>📊 测试清单</h2>
+    <div class="test-section">
+      <h3>✓ 功能测试</h3>
+      <ul>
+        <li>[ ] 可见区域截图正常工作</li>
+        <li>[ ] 自定义区域拖拽选择流畅</li>
+        <li>[ ] 整页截图完整无缺失</li>
+        <li>[ ] 截图预览清晰显示</li>
+        <li>[ ] 图片大小显示准确</li>
+      </ul>
+      
+      <h3>✓ 配置测试</h3>
+      <ul>
+        <li>[ ] 手动配置保存成功</li>
+        <li>[ ] cURL命令解析正确</li>
+        <li>[ ] 配置验证工作正常</li>
+        <li>[ ] 重置为默认配置功能正常</li>
+      </ul>
+      
+      <h3>✓ 上传测试</h3>
+      <ul>
+        <li>[ ] JSON格式上传成功</li>
+        <li>[ ] FormData格式上传成功</li>
+        <li>[ ] 上传进度显示正确</li>
+        <li>[ ] 成功/失败提示清晰</li>
+        <li>[ ] 错误处理友好</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

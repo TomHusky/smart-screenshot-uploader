@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能截图上传助手</title>
+  <link rel="stylesheet" href="styles/sidepanel.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📸 截图上传</h1>
+      <p class="subtitle">侧边栏模式 - 不会自动关闭</p>
+    </header>
+    
+    <div class="screenshot-modes">
+      <button id="captureVisible" class="btn btn-primary">
+        <span class="icon">🖼️</span>
+        <div class="btn-content">
+          <span class="text">可见区域</span>
+          <span class="shortcut">Ctrl+Shift+V</span>
+        </div>
+      </button>
+      
+      <button id="captureCustom" class="btn btn-primary">
+        <span class="icon">✂️</span>
+        <div class="btn-content">
+          <span class="text">自定义区域</span>
+          <span class="shortcut">Ctrl+Shift+C</span>
+        </div>
+      </button>
+      
+      <button id="captureFull" class="btn btn-primary">
+        <span class="icon">📄</span>
+        <div class="btn-content">
+          <span class="text">整个页面</span>
+          <span class="shortcut">Ctrl+Shift+F</span>
+        </div>
+      </button>
+    </div>
+    
+    <div id="screenshotsSection" class="screenshots-section" style="display: none;">
+      <div class="section-header">
+        <h3>截图列表 (<span id="screenshotCount">0</span>)</h3>
+        <button id="clearAllBtn" class="btn-text">🗑️ 全部清空</button>
+      </div>
+      <div id="screenshotsList" class="screenshots-list"></div>
+      <div class="batch-actions">
+        <button id="uploadAllBtn" class="btn btn-success">
+          <span class="icon">⬆️</span>
+          <span class="text">上传全部</span>
+        </button>
+      </div>
+    </div>
+    
+    <div id="statusSection" class="status-section" style="display: none;">
+      <div id="statusMessage" class="status-message"></div>
+      <div id="progressBar" class="progress-bar" style="display: none;">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+    </div>
+    
+    <footer>
+      <button id="openSettings" class="btn btn-link">⚙️ 配置HTTP请求</button>
+    </footer>
+    
+    <div class="tips">
+      <h4>💡 使用提示</h4>
+      <ul>
+        <li>侧边栏不会自动关闭</li>
+        <li>可以边操作页面边查看截图</li>
+        <li>按 Ctrl+Shift+S 快速打开/关闭</li>
+      </ul>
+    </div>
+  </div>
+  
+  <script src="sidepanel.js"></script>
+</body>
+</html>
