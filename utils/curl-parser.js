@@ -244,10 +244,6 @@ class CurlParser {
       errors.push('请求方法不能为空');
     }
     
-    if (!config.imageParamName) {
-      errors.push('截图数据参数名不能为空');
-    }
-    
     return {
       valid: errors.length === 0,
       errors

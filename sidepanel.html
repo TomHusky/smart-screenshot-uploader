@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>智能截图上传助手</title>
+  <title>DIFY网页助手</title>
   <link rel="stylesheet" href="styles/sidepanel.css">
 </head>
 <body>
@@ -46,10 +46,17 @@
       </div>
       <div id="screenshotsList" class="screenshots-list"></div>
       <div class="batch-actions">
-        <button id="uploadAllBtn" class="btn btn-success">
-          <span class="icon">⬆️</span>
-          <span class="text">上传全部</span>
+        <button id="analyzeAllBtn" class="btn btn-success">
+          <span class="icon">🔍</span>
+          <span class="text">一键分析</span>
         </button>
+      </div>
+      <div id="resultSection" class="result-section" style="display: none;">
+        <div class="result-header">
+          <h3>📊 分析结果</h3>
+          <button id="showFullResultBtn" class="btn-text">📄 查看完整结果</button>
+        </div>
+        <div id="resultPreview" class="result-preview"></div>
       </div>
     </div>
     

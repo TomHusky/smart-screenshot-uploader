@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dify工作流配置 - DIFY网页助手</title>
+  <link rel="stylesheet" href="styles/options.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+    
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 32px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .btn-back {
+      position: absolute;
+      left: 32px;
+      top: 32px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      backdrop-filter: blur(4px);
+    }
+    
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateX(-2px);
+    }
+    
+    header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    
+    header .subtitle {
+      font-size: 16px;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+    
+    .form-content {
+      padding: 32px;
+    }
+    
+    .quick-config {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .quick-config h3 {
+      font-size: 18px;
+      color: #2d3748;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    .quick-config p {
+      color: #4a5568;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .form-section {
+      margin-bottom: 32px;
+    }
+    
+    .form-section h3 {
+      font-size: 20px;
+      color: #2d3748;
+      margin-bottom: 20px;
+      font-weight: 600;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .form-group {
+      margin-bottom: 24px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    
+    .form-group input[type="url"],
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s;
+      font-family: 'SF Mono', Monaco, monospace;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-group small {
+      display: block;
+      margin-top: 6px;
+      color: #718096;
+      font-size: 13px;
+    }
+    
+    .hint {
+      color: #718096;
+      font-size: 14px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    
+    .header-row, .body-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 36px;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: start;
+      padding: 0;
+      transition: all 0.3s;
+    }
+    
+    .header-row input, .body-row input, .body-row textarea {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'SF Mono', Monaco, monospace;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    
+    .body-row textarea {
+      resize: vertical;
+      min-height: 72px;
+      line-height: 1.5;
+    }
+    
+    .header-row input:focus, .body-row input:focus, .body-row textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .btn-remove {
+      background: #fff;
+      color: #9ca3af;
+      border: 1px solid #e5e7eb;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 300;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    
+    .btn-remove:hover {
+      background: #fef2f2;
+      color: #ef4444;
+      border-color: #fca5a5;
+    }
+    
+    .btn-add {
+      background: white;
+      color: #667eea;
+      border: 2px dashed #667eea;
+      border-radius: 8px;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-add:hover {
+      background: #f7fafc;
+      border-style: solid;
+      transform: translateY(-1px);
+    }
+    
+    code {
+      background: #edf2f7;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      color: #667eea;
+      font-weight: 600;
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      padding: 24px 0 0 0;
+      margin-top: 16px;
+      border-top: 2px solid #e2e8f0;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(250, 112, 154, 0.3);
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(245, 87, 108, 0.3);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .status-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      transform: translateX(400px);
+      transition: transform 0.3s;
+      z-index: 1000;
+      max-width: 400px;
+    }
+    
+    .status-message.show {
+      transform: translateX(0);
+    }
+    
+    .status-message.success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    
+    .status-message.error {
+      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    }
+    
+    .status-message.info {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    #headersContainer:empty::before,
+    #inputsContainer:empty::before {
+      content: '点击下方按钮添加参数';
+      display: block;
+      padding: 24px;
+      text-align: center;
+      color: #a0aec0;
+      font-style: italic;
+      background: #f7fafc;
+      border: 2px dashed #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+    <header>
+      <button type="button" class="btn-back" id="backBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        返回
+      </button>
+      <h1>
+        <span class="icon">⚡</span>
+        Dify Workflow 配置
+      </h1>
+      <p>配置 Dify API 连接信息，快速集成工作流</p>
+    </header>
+    
+    <div class="form-content">
+      <form id="configForm">
+        <!-- 快速配置说明 -->
+        <div class="quick-config">
+          <h3>📝 配置说明</h3>
+          <p>根据你的 Dify 工作流 API 配置以下参数。截图数据会自动作为 inputs 中的参数发送。</p>
+        </div>
+        
+        <!-- 基础配置 -->
+        <div class="form-section">
+          <h3>🎯 基础设置</h3>
+          
+          <div class="form-group">
+            <label for="apiUrl">API 地址 *</label>
+            <input type="url" id="apiUrl" placeholder="https://dify-api.duodian.cn/v1/chat-messages" required>
+            <small>Dify 工作流的 API 端点</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="apiKey">API Key *</label>
+            <input type="text" id="apiKey" placeholder="app-xxxxxxxxxx" required>
+            <small>从 Dify 应用设置中获取</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="userId">用户标识</label>
+            <input type="text" id="userId" value="chrome-extension-user" placeholder="abc-123">
+            <small>用于标识调用来源</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="responseMode">响应模式</label>
+            <select id="responseMode">
+              <option value="blocking">⏸️ blocking (阻塞等待)</option>
+              <option value="streaming">⚡ streaming (流式返回)</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- 请求头配置 -->
+        <div class="form-section">
+          <h3>📋 请求头 (Headers)</h3>
+          <p class="hint">默认已包含 Authorization 和 Content-Type，可添加其他自定义请求头</p>
+          <div id="headersContainer"></div>
+          <button type="button" id="addHeader" class="btn-add">➕ 添加请求头</button>
+        </div>
+        
+        <!-- Inputs 参数配置 -->
+        <div class="form-section">
+          <h3>🔧 Inputs 参数</h3>
+          <p class="hint">配置传递给工作流的参数。💡 使用 <code>{{imageBase64}}</code> 引用截图数据</p>
+          <div id="inputsContainer"></div>
+          <button type="button" id="addInput" class="btn-add">➕ 添加参数</button>
+        </div>
+        
+        <!-- 高级设置 -->
+        <div class="form-section">
+          <h3>⚡ 高级设置</h3>
+          
+          <div class="form-group">
+            <label for="timeout">请求超时 (秒)</label>
+            <input type="number" id="timeout" value="30" min="5" max="300">
+          </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 保存配置</button>
+          <button type="button" id="testConfig" class="btn btn-secondary">🧪 测试配置</button>
+          <button type="button" id="resetConfig" class="btn btn-danger">🔄 重置为默认</button>
+        </div>
+      </form>
+    </div>
+    </div>
+    
+    <div id="statusMessage" class="status-message"></div>
+  </div>
+  
+  <script src="options-simple.js"></script>
+</body>
+</html>

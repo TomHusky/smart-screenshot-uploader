@@ -237,16 +237,28 @@ async function uploadImage(imageData) {
     }
     
     // 构建请求
-    const { method, url, headers, contentType, bodyParams, imageParamName, timeout } = httpConfig;
+    const { method, url, headers, timeout, jsonBody } = httpConfig;
     
     // 准备占位符数据
     const timestamp = Date.now();
-    const imageBase64 = imageData.split(',')[1]; // 去掉 "data:image/png;base64," 前缀
-    const imageName = `screenshot-${timestamp}.png`;
+    
+    // 处理单图或多图
+    let imageBase64;
+    let imageName;
+    
+    if (Array.isArray(imageData)) {
+      // 多图片：提取所有 base64 数据
+      imageBase64 = imageData.map(img => img.split(',')[1]);
+      imageName = `screenshots-${timestamp}.png`;
+    } else {
+      // 单图片
+      imageBase64 = imageData.split(',')[1];
+      imageName = `screenshot-${timestamp}.png`;
+    }
     
     const placeholders = {
-      '{{image}}': imageData,
-      '{{imageBase64}}': imageBase64,
+      '{{image}}': Array.isArray(imageData) ? imageData[0] : imageData,
+      '{{imageBase64}}': Array.isArray(imageBase64) ? imageBase64[0] : imageBase64,
       '{{imageName}}': imageName,
       '{{timestamp}}': timestamp.toString()
     };
@@ -271,78 +283,58 @@ async function uploadImage(imageData) {
       });
     }
     
-    // 准备请求体
+    // 准备请求体 - 使用 jsonBody
     let body;
-    const actualContentType = contentType === 'custom' ? httpConfig.customContentType : contentType;
-    
     if (method === 'GET') {
-      // GET请求不需要body
       body = null;
-    } else if (actualContentType === 'application/json') {
-      // JSON格式
-      const jsonBody = {};
-      if (bodyParams && Array.isArray(bodyParams)) {
-        bodyParams.forEach(param => {
-          if (param.key) {
-            let value = replacePlaceholders(param.value || '');
-            // 尝试解析JSON字符串
-            try {
-              value = JSON.parse(value);
-            } catch {
-              // 不是JSON，保持原样
-            }
-            jsonBody[param.key] = value;
-          }
-        });
-      }
-      // 如果配置了imageParamName且bodyParams中未使用占位符，则添加图片数据
-      if (imageParamName && !JSON.stringify(bodyParams).includes('{{image')) {
-        jsonBody[imageParamName] = imageData;
-      }
-      body = JSON.stringify(jsonBody);
-      requestHeaders['Content-Type'] = 'application/json';
-    } else if (actualContentType === 'multipart/form-data') {
-      // FormData格式
-      const formData = new FormData();
-      if (bodyParams && Array.isArray(bodyParams)) {
-        bodyParams.forEach(param => {
-          if (param.key) {
-            const value = replacePlaceholders(param.value || '');
-            // 检查是否是图片数据占位符
-            if (value === imageData) {
-              // 将Base64转为Blob
-              const blob = dataUrlToBlob(imageData);
-              formData.append(param.key, blob, imageName);
-            } else {
-              formData.append(param.key, value);
-            }
-          }
-        });
-      }
-      // 如果配置了imageParamName且bodyParams中未包含图片，则添加
-      if (imageParamName && !JSON.stringify(bodyParams).includes('{{image')) {
-        const blob = dataUrlToBlob(imageData);
-        formData.append(imageParamName, blob, imageName);
-      }
-      body = formData;
-      // FormData会自动设置Content-Type，包含boundary
-      delete requestHeaders['Content-Type'];
     } else {
-      // URL编码格式
-      const params = new URLSearchParams();
-      if (bodyParams && Array.isArray(bodyParams)) {
-        bodyParams.forEach(param => {
-          if (param.key) {
-            params.append(param.key, replacePlaceholders(param.value || ''));
+      // 解析 jsonBody 并替换占位符
+      let bodyObj = {};
+      if (jsonBody) {
+        try {
+          bodyObj = JSON.parse(jsonBody);
+        } catch (e) {
+          console.error('Parse jsonBody error:', e);
+        }
+      }
+      
+      // 递归替换对象中的占位符
+      function replaceInObject(obj) {
+        if (typeof obj === 'string') {
+          // 特殊处理：如果包含 {{imageBase64}} 且是数组，替换为第一个图片
+          let result = replacePlaceholders(obj);
+          // 如果是多图且字符串中有 imageBase64，可能需要特殊处理
+          if (Array.isArray(imageBase64) && obj.includes('{{imageBase64}}')) {
+            // 对于多图，使用第一张图片的 base64
+            result = result;
           }
-        });
+          return result;
+        } else if (Array.isArray(obj)) {
+          return obj.map(item => replaceInObject(item));
+        } else if (obj && typeof obj === 'object') {
+          const result = {};
+          for (const [key, value] of Object.entries(obj)) {
+            result[key] = replaceInObject(value);
+          }
+          return result;
+        }
+        return obj;
       }
-      // 如果配置了imageParamName且bodyParams中未使用占位符，则添加
-      if (imageParamName && !JSON.stringify(bodyParams).includes('{{image')) {
-        params.append(imageParamName, imageData);
+      
+      bodyObj = replaceInObject(bodyObj);
+      
+      // 如果是多图，将所有图片的 base64 添加到 files 数组中（如果配置中有这个字段）
+      if (Array.isArray(imageBase64) && bodyObj.inputs && bodyObj.inputs.files) {
+        bodyObj.inputs.files = imageBase64.map((base64, index) => ({
+          type: 'image',
+          transfer_method: 'local_file',
+          upload_file_id: '',
+          url: `data:image/png;base64,${base64}`
+        }));
       }
-      body = params.toString();
-      requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+      
+      body = JSON.stringify(bodyObj);
+      requestHeaders['Content-Type'] = 'application/json';
     }
     
     // 发送请求

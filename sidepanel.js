@@ -34,7 +34,7 @@ function initializeButtons() {
     captureScreenshot('captureFull');
   });
   
-  document.getElementById('uploadAllBtn').addEventListener('click', uploadAllScreenshots);
+  document.getElementById('analyzeAllBtn').addEventListener('click', analyzeAllScreenshots);
   document.getElementById('clearAllBtn').addEventListener('click', clearAllScreenshots);
   
   document.getElementById('openSettings').addEventListener('click', () => {
@@ -157,9 +157,6 @@ function renderScreenshots() {
             <div class="screenshot-size">📦 ${sizeKB} KB</div>
           </div>
           <div class="screenshot-actions">
-            <button class="btn-small btn-upload" data-index="${index}">
-              ⬆️ 上传
-            </button>
             <button class="btn-small btn-delete" data-index="${index}">
               🗑️ 删除
             </button>
@@ -174,13 +171,6 @@ function renderScreenshots() {
     thumb.addEventListener('click', (e) => {
       const index = parseInt(e.currentTarget.dataset.index);
       openModal(screenshots[index]);
-    });
-  });
-  
-  screenshotsList.querySelectorAll('.btn-upload').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const index = parseInt(e.target.dataset.index);
-      uploadSingleScreenshot(index);
     });
   });
   
@@ -222,12 +212,25 @@ async function openModal(screenshot) {
   
   // 获取当前活动标签
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab) return;
+  if (!tab || !tab.id) {
+    showStatus('❌ 无法获取当前标签页', 'error');
+    return;
+  }
   
-  // 向页面注入预览层
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (imageData, timestamp) => {
+  // 检查是否是受限页面（chrome://, edge://, about:, etc.）
+  if (tab.url && (tab.url.startsWith('chrome://') || 
+                  tab.url.startsWith('edge://') || 
+                  tab.url.startsWith('about:') ||
+                  tab.url.startsWith('chrome-extension://'))) {
+    showStatus('❌ 无法在系统页面中预览，请切换到普通网页', 'error');
+    return;
+  }
+  
+  try {
+    // 向页面注入预览层
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (imageData, timestamp) => {
       // 移除已存在的预览层
       const existing = document.getElementById('screenshot-preview-overlay');
       if (existing) existing.remove();
@@ -541,6 +544,10 @@ async function openModal(screenshot) {
     },
     args: [screenshot.data, screenshot.timestamp]
   });
+  } catch (error) {
+    console.error('预览失败:', error);
+    showStatus('❌ 预览失败: ' + error.message, 'error');
+  }
 }
 
 // 关闭预览弹窗（已不需要，但保留兼容性）
@@ -548,72 +555,608 @@ function closeModal() {
   currentModalImage = null;
 }
 
-// 上传单张截图
-async function uploadSingleScreenshot(index) {
-  const screenshot = screenshots[index];
-  if (!screenshot) return;
-  
-  await uploadImage(screenshot.data);
-}
-
-// 上传所有截图
-async function uploadAllScreenshots() {
+// 一键分析所有截图
+async function analyzeAllScreenshots() {
   if (screenshots.length === 0) {
-    showStatus('❌ 没有可上传的截图', 'error');
+    showStatus('❌ 没有可分析的截图', 'error');
     return;
   }
   
-  if (!confirm(`确定要上传全部 ${screenshots.length} 张截图吗？`)) {
-    return;
+  // 清理之前的结果
+  try {
+    const resultSection = document.getElementById('resultSection');
+    if (resultSection) {
+      resultSection.style.display = 'none';
+    }
+    window.fullAnalysisResult = '';
+  } catch (e) {
+    console.error('清理结果时出错:', e);
   }
   
-  showStatus(`⬆️ 正在上传 ${screenshots.length} 张截图...`, 'info');
+  showStatus(`🔍 正在分析 ${screenshots.length} 张截图...`, 'info');
   showProgress(true);
   
-  let successCount = 0;
-  let failCount = 0;
-  
-  for (let i = 0; i < screenshots.length; i++) {
-    try {
-      showStatus(`⬆️ 正在上传第 ${i + 1}/${screenshots.length} 张...`, 'info');
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'uploadImage',
+      imageData: screenshots.map(s => s.data)
+    });
+    
+    showProgress(false);
+    
+    if (response && response.success) {
+      const result = response.result;
+      showStatus(`✅ 分析完成!`, 'success');
       
-      const response = await chrome.runtime.sendMessage({
-        action: 'uploadImage',
-        imageData: screenshots[i].data
-      });
-      
-      if (response.success) {
-        successCount++;
-      } else {
-        failCount++;
+      // 显示结果
+      if (result.data) {
+        displayAnalysisResult(result.data);
       }
       
-      // 延迟避免请求过快
-      if (i < screenshots.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      failCount++;
+      setTimeout(hideStatus, 3000);
+    } else {
+      showStatus('❌ ' + (response?.error || '分析失败'), 'error');
     }
-  }
-  
-  showProgress(false);
-  
-  if (failCount === 0) {
-    showStatus(`✅ 全部上传成功！(${successCount}/${screenshots.length})`, 'success');
-    // 上传成功后清空列表
-    setTimeout(() => {
-      screenshots = [];
-      saveScreenshots();
-      renderScreenshots();
-    }, 2000);
-  } else {
-    showStatus(`⚠️ 上传完成：成功 ${successCount} 张，失败 ${failCount} 张`, 'warning');
+  } catch (error) {
+    console.error('Analysis error:', error);
+    showProgress(false);
+    showStatus('❌ 分析失败: ' + error.message, 'error');
   }
 }
 
-// 上传图片（通用方法）
+// 显示分析结果
+function displayAnalysisResult(data) {
+  // 提取分析结果文本
+  let analysisText = '';
+  
+  // 兼容不同的响应格式
+  if (typeof data === 'string') {
+    analysisText = data;
+  } else if (data.answer) {
+    analysisText = data.answer;
+  } else if (data.result) {
+    analysisText = data.result;
+  } else if (data.content) {
+    analysisText = data.content;
+  } else if (data.text) {
+    analysisText = data.text;
+  } else {
+    analysisText = JSON.stringify(data, null, 2);
+  }
+  
+  // 保存完整结果
+  window.fullAnalysisResult = analysisText;
+  
+  // 显示结果区域
+  const resultSection = document.getElementById('resultSection');
+  const resultPreview = document.getElementById('resultPreview');
+  
+  // 渲染预览（只显示前300个字符）
+  const previewText = analysisText.length > 300 
+    ? analysisText.substring(0, 300) + '...' 
+    : analysisText;
+  
+  resultPreview.innerHTML = markdownToHtml(previewText);
+  resultSection.style.display = 'block';
+  
+  // 绑定弹窗按钮事件
+  const showFullResultBtn = document.getElementById('showFullResultBtn');
+  showFullResultBtn.onclick = showFullResultModal;
+}
+
+// 简单的 Markdown 转 HTML 函数
+function markdownToHtml(markdown) {
+  if (!markdown) return '';
+  
+  let html = markdown;
+  
+  // 转义 HTML 特殊字符（除了我们要处理的 markdown 标记）
+  // html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  
+  // 代码块（必须先处理，避免其他规则影响）
+  html = html.replace(/```[\s\S]*?```/g, (match) => {
+    const code = match.slice(3, -3).trim();
+    return `<pre><code>${escapeHtml(code)}</code></pre>`;
+  });
+  
+  // 行内代码
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // 标题
+  html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+  
+  // 粗体（斜体之前处理）
+  html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  
+  // 斜体
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+  
+  // 链接
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  
+  // 分割段落
+  const paragraphs = html.split('\n\n');
+  html = paragraphs.map(para => {
+    para = para.trim();
+    if (!para) return '';
+    
+    // 检查是否是特殊元素（标题、列表、代码块等）
+    if (para.match(/^<h[1-6]>/) || 
+        para.match(/^<pre>/) || 
+        para.match(/^<ul>/) || 
+        para.match(/^<ol>/)) {
+      return para;
+    }
+    
+    // 处理无序列表
+    if (para.match(/^[\*\-] /m)) {
+      const items = para.split('\n')
+        .filter(line => line.match(/^[\*\-] /))
+        .map(line => line.replace(/^[\*\-] /, ''))
+        .map(item => `<li>${item}</li>`)
+        .join('');
+      return `<ul>${items}</ul>`;
+    }
+    
+    // 处理有序列表
+    if (para.match(/^\d+\. /m)) {
+      const items = para.split('\n')
+        .filter(line => line.match(/^\d+\. /))
+        .map(line => line.replace(/^\d+\. /, ''))
+        .map(item => `<li>${item}</li>`)
+        .join('');
+      return `<ol>${items}</ol>`;
+    }
+    
+    // 处理引用
+    if (para.match(/^> /m)) {
+      const content = para.split('\n')
+        .map(line => line.replace(/^> /, ''))
+        .join('<br>');
+      return `<blockquote>${content}</blockquote>`;
+    }
+    
+    // 普通段落
+    return `<p>${para.replace(/\n/g, '<br>')}</p>`;
+  }).join('');
+  
+  return html;
+}
+
+// HTML 转义辅助函数
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 显示完整结果弹窗 - 在网页中全屏显示（类似图片预览）
+async function showFullResultModal() {
+  // 获取当前活动标签
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab || !tab.id) {
+    showStatus('❌ 无法获取当前标签页', 'error');
+    return;
+  }
+  
+  // 检查是否是受限页面
+  if (tab.url && (tab.url.startsWith('chrome://') || 
+                  tab.url.startsWith('edge://') || 
+                  tab.url.startsWith('about:') ||
+                  tab.url.startsWith('chrome-extension://'))) {
+    showStatus('❌ 无法在系统页面中显示结果，请切换到普通网页', 'error');
+    return;
+  }
+  
+  const resultText = window.fullAnalysisResult || '';
+  
+  try {
+    // 向页面注入结果显示层
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (analysisResult) => {
+        // 移除已存在的结果层
+        const existing = document.getElementById('analysis-result-overlay');
+        if (existing) existing.remove();
+        
+        // Markdown 转 HTML 函数
+        function markdownToHtml(markdown) {
+          if (!markdown) return '';
+          
+          let html = markdown;
+          
+          // 代码块（必须先处理）
+          html = html.replace(/```[\s\S]*?```/g, (match) => {
+            const code = match.slice(3, -3).trim();
+            const div = document.createElement('div');
+            div.textContent = code;
+            return `<pre><code>${div.innerHTML}</code></pre>`;
+          });
+          
+          // 行内代码
+          html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+          
+          // 标题
+          html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+          html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+          html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+          html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+          
+          // 粗体
+          html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+          html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+          html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+          
+          // 斜体
+          html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+          html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+          
+          // 链接
+          html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+          
+          // 分割段落
+          const paragraphs = html.split('\n\n');
+          html = paragraphs.map(para => {
+            para = para.trim();
+            if (!para) return '';
+            
+            if (para.match(/^<h[1-6]>/) || para.match(/^<pre>/) || para.match(/^<ul>/) || para.match(/^<ol>/)) {
+              return para;
+            }
+            
+            // 无序列表
+            if (para.match(/^[\*\-] /m)) {
+              const items = para.split('\n')
+                .filter(line => line.match(/^[\*\-] /))
+                .map(line => line.replace(/^[\*\-] /, ''))
+                .map(item => `<li>${item}</li>`)
+                .join('');
+              return `<ul>${items}</ul>`;
+            }
+            
+            // 有序列表
+            if (para.match(/^\d+\. /m)) {
+              const items = para.split('\n')
+                .filter(line => line.match(/^\d+\. /))
+                .map(line => line.replace(/^\d+\. /, ''))
+                .map(item => `<li>${item}</li>`)
+                .join('');
+              return `<ol>${items}</ol>`;
+            }
+            
+            // 引用
+            if (para.match(/^> /m)) {
+              const content = para.split('\n')
+                .map(line => line.replace(/^> /, ''))
+                .join('<br>');
+              return `<blockquote>${content}</blockquote>`;
+            }
+            
+            return `<p>${para.replace(/\n/g, '<br>')}</p>`;
+          }).join('');
+          
+          return html;
+        }
+        
+        // 创建结果显示层
+        const overlay = document.createElement('div');
+        overlay.id = 'analysis-result-overlay';
+        overlay.innerHTML = `
+          <style>
+            #analysis-result-overlay {
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0, 0, 0, 0.95);
+              z-index: 2147483647;
+              display: flex;
+              flex-direction: column;
+              animation: fadeIn 0.3s ease;
+              overflow: hidden;
+            }
+            
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            
+            #analysis-result-overlay .result-header {
+              position: relative;
+              padding: 20px 24px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              z-index: 10;
+            }
+            
+            #analysis-result-overlay .result-title {
+              color: white;
+              font-size: 20px;
+              font-weight: 600;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+            }
+            
+            #analysis-result-overlay .result-controls {
+              display: flex;
+              gap: 12px;
+            }
+            
+            #analysis-result-overlay .result-btn {
+              padding: 10px 20px;
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+            
+            #analysis-result-overlay .btn-copy {
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              backdrop-filter: blur(10px);
+            }
+            
+            #analysis-result-overlay .btn-copy:hover {
+              background: rgba(255, 255, 255, 0.3);
+              transform: translateY(-1px);
+            }
+            
+            #analysis-result-overlay .btn-close {
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              backdrop-filter: blur(10px);
+            }
+            
+            #analysis-result-overlay .btn-close:hover {
+              background: rgba(255, 255, 255, 0.3);
+            }
+            
+            #analysis-result-overlay .result-content-wrapper {
+              flex: 1;
+              overflow: auto;
+              padding: 24px;
+              background: #f8f9fa;
+            }
+            
+            #analysis-result-overlay .result-content {
+              max-width: 900px;
+              margin: 0 auto;
+              background: white;
+              padding: 32px;
+              border-radius: 12px;
+              box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+              animation: slideUp 0.4s ease;
+            }
+            
+            @keyframes slideUp {
+              from {
+                opacity: 0;
+                transform: translateY(20px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            
+            /* Markdown 样式 */
+            #analysis-result-overlay .result-content {
+              line-height: 1.8;
+              color: #333;
+              font-size: 15px;
+            }
+            
+            #analysis-result-overlay .result-content h1,
+            #analysis-result-overlay .result-content h2,
+            #analysis-result-overlay .result-content h3,
+            #analysis-result-overlay .result-content h4 {
+              margin-top: 24px;
+              margin-bottom: 16px;
+              font-weight: 600;
+              line-height: 1.25;
+              color: #2d3748;
+            }
+            
+            #analysis-result-overlay .result-content h1 {
+              font-size: 2em;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 0.3em;
+            }
+            
+            #analysis-result-overlay .result-content h2 {
+              font-size: 1.5em;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 0.3em;
+            }
+            
+            #analysis-result-overlay .result-content h3 {
+              font-size: 1.25em;
+            }
+            
+            #analysis-result-overlay .result-content h4 {
+              font-size: 1.1em;
+            }
+            
+            #analysis-result-overlay .result-content p {
+              margin-bottom: 16px;
+            }
+            
+            #analysis-result-overlay .result-content ul,
+            #analysis-result-overlay .result-content ol {
+              padding-left: 2em;
+              margin-bottom: 16px;
+            }
+            
+            #analysis-result-overlay .result-content li {
+              margin-bottom: 8px;
+            }
+            
+            #analysis-result-overlay .result-content code {
+              background: #f1f5f9;
+              padding: 0.2em 0.4em;
+              border-radius: 3px;
+              font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+              font-size: 0.9em;
+              color: #e74c3c;
+            }
+            
+            #analysis-result-overlay .result-content pre {
+              background: #1e293b;
+              padding: 16px;
+              border-radius: 8px;
+              overflow-x: auto;
+              margin-bottom: 16px;
+            }
+            
+            #analysis-result-overlay .result-content pre code {
+              background: none;
+              padding: 0;
+              color: #e2e8f0;
+              font-size: 0.9em;
+            }
+            
+            #analysis-result-overlay .result-content blockquote {
+              border-left: 4px solid #667eea;
+              padding-left: 16px;
+              color: #64748b;
+              margin: 16px 0;
+              font-style: italic;
+            }
+            
+            #analysis-result-overlay .result-content a {
+              color: #667eea;
+              text-decoration: none;
+              border-bottom: 1px solid transparent;
+              transition: border-color 0.2s;
+            }
+            
+            #analysis-result-overlay .result-content a:hover {
+              border-bottom-color: #667eea;
+            }
+            
+            #analysis-result-overlay .result-content strong {
+              font-weight: 600;
+              color: #1e293b;
+            }
+            
+            #analysis-result-overlay .result-content em {
+              font-style: italic;
+            }
+            
+            #analysis-result-overlay .result-info {
+              position: absolute;
+              bottom: 20px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: rgba(0, 0, 0, 0.8);
+              backdrop-filter: blur(10px);
+              color: white;
+              padding: 12px 24px;
+              border-radius: 20px;
+              font-size: 13px;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              z-index: 10;
+            }
+          </style>
+          
+          <div class="result-header">
+            <div class="result-title">
+              <span>📊</span>
+              <span>分析结果</span>
+            </div>
+            <div class="result-controls">
+              <button class="result-btn btn-copy" id="copy-result-btn">📋 复制内容</button>
+              <button class="result-btn btn-close" id="close-result-btn">✕ 关闭</button>
+            </div>
+          </div>
+          
+          <div class="result-content-wrapper">
+            <div class="result-content" id="result-content-html"></div>
+          </div>
+          
+          <div class="result-info">
+            ESC 键关闭 | 滚动查看完整内容
+          </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // 渲染 Markdown 内容
+        const contentElement = document.getElementById('result-content-html');
+        contentElement.innerHTML = markdownToHtml(analysisResult);
+        
+        // 复制按钮
+        document.getElementById('copy-result-btn').addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(analysisResult);
+            const btn = document.getElementById('copy-result-btn');
+            const originalText = btn.textContent;
+            btn.textContent = '✅ 已复制';
+            setTimeout(() => {
+              btn.textContent = originalText;
+            }, 2000);
+          } catch (error) {
+            console.error('Copy error:', error);
+            alert('复制失败，请手动复制');
+          }
+        });
+        
+        // 关闭按钮
+        document.getElementById('close-result-btn').addEventListener('click', () => {
+          overlay.remove();
+        });
+        
+        // ESC键关闭
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', handleEscape);
+          }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // 防止页面滚动
+        document.body.style.overflow = 'hidden';
+        overlay.addEventListener('remove', () => {
+          document.body.style.overflow = '';
+        });
+      },
+      args: [resultText]
+    });
+  } catch (error) {
+    console.error('显示结果失败:', error);
+    showStatus('❌ 显示结果失败: ' + error.message, 'error');
+  }
+}
+
+// 复制结果到剪贴板（侧边栏内使用）
+async function copyResultToClipboard() {
+  try {
+    await navigator.clipboard.writeText(window.fullAnalysisResult || '');
+    showStatus('✅ 已复制到剪贴板', 'success');
+    setTimeout(hideStatus, 2000);
+  } catch (error) {
+    console.error('Copy error:', error);
+    showStatus('❌ 复制失败', 'error');
+  }
+}
+
+// 上传图片（通用方法 - 保留兼容）
 async function uploadImage(imageData) {
   try {
     showStatus('⬆️ 正在上传...', 'info');
