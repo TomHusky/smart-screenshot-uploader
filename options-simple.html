@@ -16,30 +16,35 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      padding: 40px 20px;
+      padding: 20px;
     }
     
     .container {
-      max-width: 800px;
+      max-width: 1400px;
       margin: 0 auto;
       background: white;
       border-radius: 16px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 40px);
     }
     
     header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 32px;
+      padding: 24px 32px;
       text-align: center;
       position: relative;
+      flex-shrink: 0;
     }
     
     .btn-back {
       position: absolute;
       left: 32px;
-      top: 32px;
+      top: 50%;
+      transform: translateY(-50%);
       background: rgba(255, 255, 255, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.3);
       color: white;
@@ -57,13 +62,13 @@
     
     .btn-back:hover {
       background: rgba(255, 255, 255, 0.3);
-      transform: translateX(-2px);
+      transform: translateY(-50%) translateX(-2px);
     }
     
     header h1 {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -71,27 +76,88 @@
     }
     
     header .subtitle {
-      font-size: 16px;
+      font-size: 14px;
       opacity: 0.9;
       font-weight: 400;
     }
     
-    .form-content {
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .sidebar {
+      width: 260px;
+      background: #f8fafc;
+      border-right: 1px solid #e2e8f0;
+      padding: 24px 0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    
+    .sidebar-item {
+      padding: 12px 24px;
+      margin: 4px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 500;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .sidebar-item:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    
+    .sidebar-item.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .sidebar-item .icon {
+      font-size: 18px;
+    }
+    
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
       padding: 32px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .content-panel {
+      display: none;
+      flex: 1;
+    }
+    
+    .content-panel.active {
+      display: block;
+    }
+    
+    .form-content {
+      max-width: 900px;
     }
     
     .quick-config {
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 32px;
+      padding: 20px;
+      margin-bottom: 28px;
       border-left: 4px solid #667eea;
     }
     
     .quick-config h3 {
-      font-size: 18px;
+      font-size: 16px;
       color: #2d3748;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       font-weight: 600;
     }
     
@@ -101,12 +167,199 @@
       line-height: 1.6;
     }
     
+    /* 场景配置特殊样式 */
+    .scenario-section {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .scenario-list {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    
+    .scenario-item {
+      background: white;
+      border: 1px solid #eef2f6;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .scenario-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(to bottom, #667eea, #764ba2);
+      opacity: 0;
+    }
+
+    .scenario-item:hover {
+      border-color: #e0e7ff;
+    }
+    
+    .scenario-item.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    }
+    
+    .scenario-item:hover::before {
+      opacity: 1;
+    }
+    
+    .scenario-info {
+      flex: 1;
+      padding-left: 8px;
+    }
+    
+    .scenario-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .scenario-active-badge {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    
+    .scenario-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .scenario-item:hover .scenario-actions {
+      opacity: 1;
+    }
+    
+    .scenario-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .scenario-btn-edit {
+      background: #e0e7ff;
+      color: #667eea;
+    }
+    
+    .scenario-btn-edit:hover {
+      background: #667eea;
+      color: white;
+    }
+    
+    .scenario-btn-delete {
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
+    }
+    
+    .scenario-btn-delete:hover {
+      background: #dc2626;
+      color: white;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    }
+    
+    .add-scenario-form {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      padding: 24px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px dashed #cbd5e0;
+      transition: all 0.3s;
+    }
+
+    .add-scenario-form:focus-within {
+      background: white;
+      border-color: #667eea;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
+    }
+    
+    .add-scenario-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s;
+      background: white;
+    }
+    
+    .add-scenario-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .add-scenario-btn {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .add-scenario-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+    
+    .add-scenario-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #94a3b8;
+    }
+    
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    
     .form-section {
       margin-bottom: 32px;
     }
     
     .form-section h3 {
-      font-size: 20px;
+      font-size: 18px;
       color: #2d3748;
       margin-bottom: 20px;
       font-weight: 600;
@@ -350,7 +603,7 @@
   </style>
 </head>
 <body>
-    <div class="container">
+  <div class="container">
     <header>
       <button type="button" class="btn-back" id="backBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -360,84 +613,190 @@
       </button>
       <h1>
         <span class="icon">⚡</span>
-        Dify Workflow 配置
+        Dify Workflow 配置中心
       </h1>
-      <p>配置 Dify API 连接信息，快速集成工作流</p>
+      <p class="subtitle">配置场景和工作流参数，提升工作效率</p>
     </header>
     
-    <div class="form-content">
-      <form id="configForm">
-        <!-- 快速配置说明 -->
-        <div class="quick-config">
-          <h3>📝 配置说明</h3>
-          <p>根据你的 Dify 工作流 API 配置以下参数。截图数据会自动作为 inputs 中的参数发送。</p>
+    <div class="main-content">
+      <!-- 左侧导航栏 -->
+      <div class="sidebar">
+        <div class="sidebar-item active" data-panel="scenario">
+          <span class="icon">🎬</span>
+          <span>场景配置</span>
+        </div>
+        <div class="sidebar-item" data-panel="basic">
+          <span class="icon">🎯</span>
+          <span>基础设置</span>
+        </div>
+        <div class="sidebar-item" data-panel="headers">
+          <span class="icon">📋</span>
+          <span>请求头配置</span>
+        </div>
+        <div class="sidebar-item" data-panel="inputs">
+          <span class="icon">🔧</span>
+          <span>参数配置</span>
+        </div>
+        <div class="sidebar-item" data-panel="advanced">
+          <span class="icon">⚙️</span>
+          <span>高级设置</span>
+        </div>
+      </div>
+      
+      <!-- 右侧内容区 -->
+      <div class="content-area">
+        <!-- 场景配置面板 -->
+        <div class="content-panel active" id="panel-scenario">
+          <div class="form-content">
+            <div class="quick-config">
+              <h3>🎬 场景配置</h3>
+              <p>创建和管理不同的使用场景，每个场景可以有独立的配置。在首页可以快速切换场景。</p>
+            </div>
+            
+            <div class="scenario-section">
+              <h3 style="font-size: 18px; color: #2d3748; margin-bottom: 16px; font-weight: 600;">
+                我的场景列表
+              </h3>
+              
+              <div id="scenarioList" class="scenario-list">
+                <!-- 场景列表将由 JS 动态生成 -->
+              </div>
+              
+              <div class="add-scenario-form">
+                <input 
+                  type="text" 
+                  id="newScenarioName" 
+                  class="add-scenario-input" 
+                  placeholder="输入新场景名称，如：客户服务、产品分析、代码审查..."
+                  maxlength="30"
+                />
+                <button type="button" id="addScenarioBtn" class="add-scenario-btn">
+                  ➕ 添加场景
+                </button>
+              </div>
+            </div>
+            
+            <div class="scenario-section">
+              <h3 style="font-size: 18px; color: #2d3748; margin-bottom: 12px; font-weight: 600;">
+                💡 使用说明
+              </h3>
+              <ul style="color: #64748b; font-size: 14px; line-height: 2; padding-left: 20px;">
+                <li>每个场景可以配置不同的 API 参数和工作流</li>
+                <li>标记为「默认」的场景会在首页自动选中</li>
+                <li>在首页的场景下拉框可以快速切换</li>
+                <li>删除场景不会影响其他场景的配置</li>
+              </ul>
+            </div>
+          </div>
         </div>
         
-        <!-- 基础配置 -->
-        <div class="form-section">
-          <h3>🎯 基础设置</h3>
-          
-          <div class="form-group">
-            <label for="apiUrl">API 地址 *</label>
-            <input type="url" id="apiUrl" placeholder="https://dify-api.duodian.cn/v1/chat-messages" required>
-            <small>Dify 工作流的 API 端点</small>
-          </div>
-          
-          <div class="form-group">
-            <label for="apiKey">API Key *</label>
-            <input type="text" id="apiKey" placeholder="app-xxxxxxxxxx" required>
-            <small>从 Dify 应用设置中获取</small>
-          </div>
-          
-          <div class="form-group">
-            <label for="userId">用户标识</label>
-            <input type="text" id="userId" value="chrome-extension-user" placeholder="abc-123">
-            <small>用于标识调用来源</small>
-          </div>
-          
-          <div class="form-group">
-            <label for="responseMode">响应模式</label>
-            <select id="responseMode">
-              <option value="blocking">⏸️ blocking (阻塞等待)</option>
-              <option value="streaming">⚡ streaming (流式返回)</option>
-            </select>
+        <!-- 基础设置面板 -->
+        <div class="content-panel" id="panel-basic">
+          <form id="configForm">
+            <div class="form-content">
+              <div class="quick-config">
+                <h3>🎯 基础设置</h3>
+                <p>配置当前场景的 Dify API 连接信息和基本参数。</p>
+              </div>
+              
+              <!-- 基础配置 -->
+              <div class="form-section">
+                <h3>🔗 API 配置</h3>
+                
+                <div class="form-group">
+                  <label for="apiUrl">API 地址 *</label>
+                  <input type="url" id="apiUrl" placeholder="https://dify-api.duodian.cn/v1/chat-messages" required>
+                  <small>Dify 工作流的 API 端点</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="apiKey">API Key *</label>
+                  <input type="text" id="apiKey" placeholder="app-xxxxxxxxxx" required>
+                  <small>从 Dify 应用设置中获取</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="userId">用户标识</label>
+                  <input type="text" id="userId" value="chrome-extension-user" placeholder="abc-123">
+                  <small>用于标识调用来源</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="responseMode">响应模式</label>
+                  <select id="responseMode">
+                    <option value="blocking">⏸️ blocking (阻塞等待)</option>
+                    <option value="streaming">⚡ streaming (流式返回)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- 操作按钮 -->
+              <!-- 移至全局底部 -->
+            </div>
+          </form>
+        </div>
+        
+        <!-- 请求头配置面板 -->
+        <div class="content-panel" id="panel-headers">
+          <div class="form-content">
+            <div class="quick-config">
+              <h3>📋 请求头配置</h3>
+              <p>配置 HTTP 请求头，默认已包含 Authorization 和 Content-Type。</p>
+            </div>
+            
+            <div class="form-section">
+              <h3>🔗 自定义请求头</h3>
+              <p class="hint">默认已包含 Authorization 和 Content-Type，可添加其他自定义请求头</p>
+              <div id="headersContainer"></div>
+              <button type="button" id="addHeader" class="btn-add">➕ 添加请求头</button>
+            </div>
           </div>
         </div>
         
-        <!-- 请求头配置 -->
-        <div class="form-section">
-          <h3>📋 请求头 (Headers)</h3>
-          <p class="hint">默认已包含 Authorization 和 Content-Type，可添加其他自定义请求头</p>
-          <div id="headersContainer"></div>
-          <button type="button" id="addHeader" class="btn-add">➕ 添加请求头</button>
-        </div>
-        
-        <!-- Inputs 参数配置 -->
-        <div class="form-section">
-          <h3>🔧 Inputs 参数</h3>
-          <p class="hint">配置传递给工作流的参数。💡 使用 <code>{{imageBase64}}</code> 引用截图数据</p>
-          <div id="inputsContainer"></div>
-          <button type="button" id="addInput" class="btn-add">➕ 添加参数</button>
-        </div>
-        
-        <!-- 高级设置 -->
-        <div class="form-section">
-          <h3>⚡ 高级设置</h3>
-          
-          <div class="form-group">
-            <label for="timeout">请求超时 (秒)</label>
-            <input type="number" id="timeout" value="30" min="5" max="300">
+        <!-- 参数配置面板 -->
+        <div class="content-panel" id="panel-inputs">
+          <div class="form-content">
+            <div class="quick-config">
+              <h3>🔧 参数配置</h3>
+              <p>配置传递给工作流的输入参数，支持占位符变量。</p>
+            </div>
+            
+            <div class="form-section">
+              <h3>📝 Inputs 参数</h3>
+              <p class="hint">配置传递给工作流的参数。💡 使用 <code>{{imageBase64}}</code> 引用截图数据，<code>{{scenario}}</code> 引用当前场景名称</p>
+              <div id="inputsContainer"></div>
+              <button type="button" id="addInput" class="btn-add">➕ 添加参数</button>
+            </div>
           </div>
         </div>
         
-        <!-- 操作按钮 -->
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">💾 保存配置</button>
+        <!-- 高级设置面板 -->
+        <div class="content-panel" id="panel-advanced">
+          <div class="form-content">
+            <div class="quick-config">
+              <h3>⚙️ 高级设置</h3>
+              <p>高级配置选项，调整网络和性能参数。</p>
+            </div>
+            
+            <div class="form-section">
+              <h3>🌐 网络设置</h3>
+              
+              <div class="form-group">
+                <label for="timeout">请求超时 (秒)</label>
+                <input type="number" id="timeout" value="30" min="5" max="300">
+                <small>请求超时时间，建议 5-300 秒</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 全局操作按钮 -->
+        <div id="globalActions" class="form-actions" style="display: none; margin-top: auto; padding-top: 24px; border-top: 2px solid #e2e8f0;">
+          <button type="button" id="saveConfigBtn" class="btn btn-primary">💾 保存配置</button>
           <button type="button" id="testConfig" class="btn btn-secondary">🧪 测试配置</button>
           <button type="button" id="resetConfig" class="btn btn-danger">🔄 重置为默认</button>
         </div>
-      </form>
-    </div>
+      </div>
     </div>
     
     <div id="statusMessage" class="status-message"></div>
