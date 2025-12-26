@@ -311,6 +311,7 @@ function createDefaultConfig() {
     url: 'https://dify-api.duodian.cn/v1/chat-messages',
     contentType: 'application/json',
     timeout: 30,
+    apiKey: '',
     headers: [
       { key: 'Authorization', value: 'Bearer ' },
       { key: 'Content-Type', value: 'application/json' }
@@ -320,7 +321,7 @@ function createDefaultConfig() {
         image: '{{imageBase64}}',
         query: '请分析这张图片'
       },
-      response_mode: 'streaming',
+      response_mode: 'blocking',
       user: 'chrome-extension-user'
     }, null, 2),
     bodyParams: []
@@ -383,7 +384,6 @@ function buildConfigFromForm() {
   const apiUrl = document.getElementById('apiUrl').value.trim();
   const apiKey = document.getElementById('apiKey').value.trim();
   const userId = document.getElementById('userId').value.trim();
-  const responseMode = document.getElementById('responseMode').value;
   const timeout = parseInt(document.getElementById('timeout').value) || 30;
   
   if (!apiUrl) {
@@ -418,6 +418,7 @@ function buildConfigFromForm() {
   return {
     method: 'POST',
     url: apiUrl,
+    apiKey: apiKey, // 显式保存 apiKey
     contentType: 'application/json',
     timeout: timeout,
     headers: [
@@ -428,7 +429,7 @@ function buildConfigFromForm() {
     jsonBody: JSON.stringify({
       inputs: inputs,
       query: "-",
-      response_mode: responseMode,
+      response_mode: 'blocking',
       user: userId
     }, null, 2),
     bodyParams: []
@@ -444,13 +445,12 @@ function populateForm(config) {
   let headers = {};
   let inputs = {};
   let userId = 'chrome-extension-user';
-  let responseMode = 'streaming';
-  let apiKey = '';
+  let apiKey = config.apiKey || ''; // 优先使用显式保存的 apiKey
   
-  // 解析请求头，提取 API Key
+  // 解析请求头，提取 API Key (兼容旧配置)
   if (config.headers && Array.isArray(config.headers)) {
     config.headers.forEach(header => {
-      if (header.key === 'Authorization' && header.value) {
+      if (header.key === 'Authorization' && header.value && !apiKey) {
         apiKey = header.value.replace('Bearer ', '').trim();
       } else if (header.key !== 'Content-Type') {
         headers[header.key] = header.value;
@@ -464,7 +464,6 @@ function populateForm(config) {
       const body = JSON.parse(config.jsonBody);
       inputs = body.inputs || {};
       userId = body.user || 'chrome-extension-user';
-      responseMode = body.response_mode || 'streaming';
     } catch (e) {
       console.error('Parse jsonBody error:', e);
     }
@@ -473,7 +472,6 @@ function populateForm(config) {
   // 填充表单
   document.getElementById('apiKey').value = apiKey;
   document.getElementById('userId').value = userId;
-  document.getElementById('responseMode').value = responseMode;
   
   // 填充请求头
   const headersContainer = document.getElementById('headersContainer');
