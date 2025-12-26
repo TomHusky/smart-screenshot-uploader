@@ -65,3 +65,4 @@ logs/
 # (Keep SVG source files but ignore generated PNGs if you prefer to generate them)
 # Uncomment the next line if you want to generate icons on each build:
 # icons/*.png
+.history/

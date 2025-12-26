@@ -2,11 +2,13 @@
 
 let screenshots = []; // 存储多张截图
 let currentModalImage = null; // 当前弹窗显示的图片
+let scenes = []; // 存储场景列表
 
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
   initializeButtons();
   checkConfiguration();
+  await loadScenes();
   await loadScreenshots();
   await checkLatestScreenshot();
   
@@ -17,6 +19,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       sendResponse({ success: true });
     }
     return true;
+  });
+  
+  // 监听storage变化，自动更新场景列表
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes.scenarios) {
+      console.log('Scenarios updated, reloading...');
+      loadScenes();
+    }
   });
 });
 
@@ -30,8 +40,8 @@ function initializeButtons() {
     captureScreenshot('captureCustom');
   });
   
-  document.getElementById('captureFull').addEventListener('click', () => {
-    captureScreenshot('captureFull');
+  document.getElementById('captureScroll').addEventListener('click', () => {
+    startScrollCapture();
   });
   
   document.getElementById('analyzeAllBtn').addEventListener('click', analyzeAllScreenshots);
@@ -40,6 +50,82 @@ function initializeButtons() {
   document.getElementById('openSettings').addEventListener('click', () => {
     chrome.runtime.openOptionsPage();
   });
+}
+
+// 加载场景列表
+async function loadScenes() {
+  try {
+    const result = await chrome.storage.sync.get(['scenarios', 'currentScenarioId']);
+    const scenarios = result.scenarios || [];
+    
+    const sceneSelect = document.getElementById('scenarioSelect');
+    const previousValue = sceneSelect.value;
+    
+    // 移除旧的事件监听器（通过克隆节点）
+    const newSceneSelect = sceneSelect.cloneNode(false);
+    sceneSelect.parentNode.replaceChild(newSceneSelect, sceneSelect);
+    
+    newSceneSelect.innerHTML = '';
+    
+    if (scenarios.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = '🎬 请先在设置中添加场景';
+      option.disabled = true;
+      option.selected = true;
+      newSceneSelect.appendChild(option);
+      newSceneSelect.disabled = true;
+    } else {
+      newSceneSelect.disabled = false;
+      
+      // 添加占位符选项（可选）
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '🎯 选择场景...';
+      placeholder.disabled = true;
+      newSceneSelect.appendChild(placeholder);
+      
+      scenarios.forEach((scenario) => {
+        const option = document.createElement('option');
+        option.value = scenario.id;
+        
+        // 美化选项文本，添加emoji和标记
+        const prefix = scenario.isDefault ? '⭐ ' : '🎬 ';
+        const suffix = scenario.isDefault ? ' (默认)' : '';
+        option.textContent = prefix + scenario.name + suffix;
+        
+        // 选中当前场景或默认场景
+        if (scenario.id === result.currentScenarioId || 
+            (scenario.id === previousValue && result.currentScenarioId === undefined) ||
+            (scenario.isDefault && !result.currentScenarioId)) {
+          option.selected = true;
+        }
+        
+        newSceneSelect.appendChild(option);
+      });
+    }
+    
+    // 添加场景切换监听器
+    newSceneSelect.addEventListener('change', async (e) => {
+      const scenarioId = e.target.value;
+      if (scenarioId) {
+        await chrome.storage.sync.set({ currentScenarioId: scenarioId });
+        const scenario = scenarios.find(s => s.id === scenarioId);
+        if (scenario) {
+          // 切换到新场景的配置
+          await chrome.storage.sync.set({ httpConfig: scenario.config });
+          showStatus(`✨ 已切换到场景: ${scenario.name}`, 'success');
+        }
+      }
+    });
+    
+    // 存储场景列表供其他函数使用
+    scenes = scenarios;
+    
+  } catch (error) {
+    console.error('Load scenes error:', error);
+    showStatus('❌ 加载场景列表失败', 'error');
+  }
 }
 
 // 检查配置
@@ -110,6 +196,38 @@ async function captureScreenshot(mode) {
   } catch (error) {
     console.error('Capture error:', error);
     showStatus('❌ 截图失败: ' + error.message, 'error');
+  }
+}
+
+// 启动滚动截图
+async function startScrollCapture() {
+  try {
+    showStatus('📜 正在启动滚动截图...', 'info');
+    
+    const response = await chrome.runtime.sendMessage({ action: 'captureScroll' });
+    
+    if (response.success) {
+      if (response.data && response.data.waiting) {
+        showStatus('📸 滚动截图已启动\n请在页面上手动滚动，然后点击"捕获"按钮\n完成后点击"完成"按钮', 'info');
+        
+        // 监听完成消息
+        const messageListener = (request, sender, sendResponse) => {
+          if (request.action === 'scrollCaptureComplete' && request.imageData) {
+            addScreenshot(request.imageData);
+            showStatus('✅ 滚动截图完成！', 'success');
+            setTimeout(hideStatus, 2000);
+            chrome.runtime.onMessage.removeListener(messageListener);
+            sendResponse({ success: true });
+          }
+        };
+        chrome.runtime.onMessage.addListener(messageListener);
+      }
+    } else {
+      showStatus('❌ ' + (response.error || '滚动截图失败'), 'error');
+    }
+  } catch (error) {
+    console.error('Scroll capture error:', error);
+    showStatus('❌ 滚动截图失败: ' + error.message, 'error');
   }
 }
 
@@ -576,10 +694,15 @@ async function analyzeAllScreenshots() {
   showStatus(`🔍 正在分析 ${screenshots.length} 张截图...`, 'info');
   showProgress(true);
   
+  // 获取选中的场景
+  const sceneSelect = document.getElementById('sceneSelect');
+  const selectedScene = sceneSelect ? sceneSelect.value : '';
+  
   try {
     const response = await chrome.runtime.sendMessage({
       action: 'uploadImage',
-      imageData: screenshots.map(s => s.data)
+      imageData: screenshots.map(s => s.data),
+      sceneName: selectedScene
     });
     
     showProgress(false);
@@ -788,14 +911,15 @@ async function showFullResultModal() {
           html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
           html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
           
-          // 粗体
+          // 粗体(必须在斜体前处理)
           html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
           html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
           html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
           
-          // 斜体
-          html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-          html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+          // 斜体 - 修复：确保不会误匹配下划线,使用更严格的正则
+          // 只匹配前后有空格或行首行尾的情况
+          html = html.replace(/(?:^|\s)\*([^*\n]+)\*(?=\s|$)/gm, ' <em>$1</em>');
+          html = html.replace(/(?:^|\s)_([^_\n]+)_(?=\s|$)/gm, ' <em>$1</em>');
           
           // 链接
           html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');

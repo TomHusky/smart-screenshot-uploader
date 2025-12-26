@@ -39,12 +39,12 @@
       },
       "description": "自定义区域截图"
     },
-    "capture-full": {
+    "capture-scroll": {
       "suggested_key": {
         "default": "Ctrl+Shift+F",
         "mac": "Command+Shift+F"
       },
-      "description": "截取整个页面"
+      "description": "滚动截图"
     },
     "toggle-sidepanel": {
       "suggested_key": {
