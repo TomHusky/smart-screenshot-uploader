@@ -623,7 +623,7 @@ async function uploadImage(imageData, userQuery = '') {
       '{{imageName}}': imageName,
       '{{timestamp}}': timestamp.toString(),
       '{{scenario}}': currentScenarioName,
-      '{{query}}': userQuery || ''
+      '{{desc}}': userQuery || ''
     };
     
     // 替换字符串中的占位符，如果占位符的值为空则传空字符串而不是占位符本身
