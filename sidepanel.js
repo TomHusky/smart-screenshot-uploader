@@ -699,10 +699,15 @@ async function analyzeAllScreenshots() {
   const selectedScene = sceneSelect ? sceneSelect.value : '';
   
   try {
+    // 获取用户输入的 query
+    const queryInput = document.getElementById('queryInput');
+    const userQuery = queryInput ? queryInput.value.trim() : '';
+    
     const response = await chrome.runtime.sendMessage({
       action: 'uploadImage',
       imageData: screenshots.map(s => s.data),
-      sceneName: selectedScene
+      sceneName: selectedScene,
+      userQuery: userQuery
     });
     
     showProgress(false);

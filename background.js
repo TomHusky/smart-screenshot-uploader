@@ -91,7 +91,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           break;
           
         case 'uploadImage':
-          const uploadResult = await uploadImage(request.imageData);
+          const uploadResult = await uploadImage(request.imageData, request.userQuery);
           sendResponse({ success: true, result: uploadResult });
           break;
           
@@ -570,7 +570,7 @@ async function cropImage(imageData, cropArea) {
 }
 
 // 上传图片
-async function uploadImage(imageData) {
+async function uploadImage(imageData, userQuery = '') {
   try {
     // 获取HTTP配置
     const config = await chrome.storage.sync.get(['httpConfig', 'scenarios', 'currentScenarioId']);
@@ -622,16 +622,17 @@ async function uploadImage(imageData) {
       '{{imageBase64}}': imageBase64,
       '{{imageName}}': imageName,
       '{{timestamp}}': timestamp.toString(),
-      '{{scenario}}': currentScenarioName
+      '{{scenario}}': currentScenarioName,
+      '{{query}}': userQuery || ''
     };
     
-    // 替换字符串中的占位符
+    // 替换字符串中的占位符，如果占位符的值为空则传空字符串而不是占位符本身
     function replacePlaceholders(str) {
       if (typeof str !== 'string') return str;
       let result = str;
       for (const [placeholder, value] of Object.entries(placeholders)) {
-        // 如果值为 undefined 或 null，替换为空字符串
-        const replaceValue = (value === undefined || value === null) ? '' : value;
+        // 如果值为空（undefined、null、空字符串），替换为空字符串
+        const replaceValue = (value === undefined || value === null || value === '') ? '' : value;
         result = result.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), replaceValue);
       }
       return result;
