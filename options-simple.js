@@ -520,7 +520,7 @@ function addInputRow(key = '', value = '') {
   
   row.innerHTML = `
     <input type="text" class="input-key" placeholder="参数名" value="${escapeHtml(key)}">
-    <textarea class="input-value" placeholder="参数值（可使用 {{imageBase64}} 等占位符）">${escapeHtml(value)}</textarea>
+    <textarea class="input-value" placeholder="参数值（可使用 {{imageBase64}} 等占位符，多图时自动用逗号连接）">${escapeHtml(value)}</textarea>
     <button type="button" class="btn-remove">−</button>
   `;
   

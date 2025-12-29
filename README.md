@@ -29,7 +29,7 @@
 - 支持多种Content-Type（JSON, Form-Data, URL-Encoded）
 - **占位符系统**: 在参数中使用占位符自动替换
   - `{{image}}` - 完整Base64图片（含data:前缀）
-  - `{{imageBase64}}` - 纯Base64字符串
+  - `{{imageBase64}}` - 纯Base64字符串（多图时用逗号连接）
   - `{{imageName}}` - 自动生成文件名
   - `{{timestamp}}` - 当前时间戳
 - 导入cURL命令快速配置
@@ -211,10 +211,19 @@ chrome-plug/
 
 在上传前自动替换请求体和请求头中的占位符：
 ```javascript
+// 单图片
 const placeholders = {
   '{{image}}': 'data:image/png;base64,...',
   '{{imageBase64}}': 'iVBORw0KGgo...',
   '{{imageName}}': 'screenshot-1702012345678.png',
+  '{{timestamp}}': '1702012345678'
+};
+
+// 多图片（例如选中了 3 张图片）
+const placeholders = {
+  '{{image}}': 'data:image/png;base64,...',        // 第一张
+  '{{imageBase64}}': 'iVBORw0KGgo...,R0lGODlhAQAB...,iVBORw0KGgoAAAANS...',  // 所有图片用逗号连接
+  '{{imageName}}': 'screenshots-1702012345678.png',
   '{{timestamp}}': '1702012345678'
 };
 ```
@@ -240,15 +249,23 @@ const placeholders = {
 | 占位符 | 替换为 | 使用场景 |
 |--------|--------|----------|
 | `{{image}}` | `data:image/png;base64,iVBORw0...` | 完整Base64图片（含前缀） |
-| `{{imageBase64}}` | `iVBORw0KGgo...` | 纯Base64字符串 |
+| `{{imageBase64}}` | `iVBORw0KGgo...` | 纯Base64字符串（多图时用逗号连接） |
 | `{{imageName}}` | `screenshot-1702012345678.png` | 自动生成的文件名 |
 | `{{timestamp}}` | `1702012345678` | 当前时间戳 |
 
-**示例配置**：
+**单图片示例配置**：
 ```json
 参数key: data
 参数value: {"screenshot": "{{imageBase64}}", "filename": "{{imageName}}", "uploaded_at": {{timestamp}}}
 ```
+
+**多图片示例配置**：
+```json
+参数key: data
+参数value: {"images": "{{imageBase64}}", "filename": "{{imageName}}", "timestamp": {{timestamp}}}
+```
+
+💡 多图时，`{{imageBase64}}` 会自动将所有图片的 Base64 数据用逗号连接成一个字符串，例如：`"base64_1,base64_2,base64_3"`
 
 ### cURL解析支持
 
@@ -299,15 +316,24 @@ const placeholders = {
 5. 验证截图包含完整页面内容
 
 ### 测试场景6: 占位符上传
-配置示例：
+
+**单图配置示例**：
 ```json
 Content-Type: application/json
 参数key: payload
 参数value: {"image_data": "{{imageBase64}}", "filename": "{{imageName}}", "timestamp": {{timestamp}}}
 ```
+
+**多图配置示例**：
+```json
+Content-Type: application/json
+参数key: payload
+参数value: {"images": "{{imageBase64}}", "filename": "{{imageName}}", "timestamp": {{timestamp}}}
+```
+
 验证：
-1. 上传一张图片
-2. 检查请求体中占位符已正确替换
+1. 选择多张图片上传
+2. 检查请求体中 `{{imageBase64}}` 占位符已正确替换为逗号连接的 Base64 字符串
 3. 响应包含正确的数据
 
 ### 测试场景7: 批量上传

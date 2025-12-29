@@ -599,21 +599,27 @@ async function uploadImage(imageData) {
     
     // 处理单图或多图
     let imageBase64;
+    let imageWithPrefix;
     let imageName;
     
     if (Array.isArray(imageData)) {
-      // 多图片：提取所有 base64 数据
-      imageBase64 = imageData.map(img => img.split(',')[1]);
+      // 多图片：提取所有 base64 数据，用 \n\n 连接
+      const base64Array = imageData.map(img => img.split(',')[1]);
+      imageBase64 = base64Array.join('\n\n');
+      // 为每个 base64 添加前缀后用 \n\n 连接
+      imageWithPrefix = base64Array.map(b64 => `data:image/png;base64,${b64}`).join('\n\n');
       imageName = `screenshots-${timestamp}.png`;
     } else {
       // 单图片
       imageBase64 = imageData.split(',')[1];
+      imageWithPrefix = imageData;
       imageName = `screenshot-${timestamp}.png`;
     }
     
+    // 构建占位符对象
     const placeholders = {
-      '{{image}}': Array.isArray(imageData) ? imageData[0] : imageData,
-      '{{imageBase64}}': Array.isArray(imageBase64) ? imageBase64[0] : imageBase64,
+      '{{image}}': imageWithPrefix,
+      '{{imageBase64}}': imageBase64,
       '{{imageName}}': imageName,
       '{{timestamp}}': timestamp.toString(),
       '{{scenario}}': currentScenarioName
@@ -624,7 +630,9 @@ async function uploadImage(imageData) {
       if (typeof str !== 'string') return str;
       let result = str;
       for (const [placeholder, value] of Object.entries(placeholders)) {
-        result = result.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+        // 如果值为 undefined 或 null，替换为空字符串
+        const replaceValue = (value === undefined || value === null) ? '' : value;
+        result = result.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), replaceValue);
       }
       return result;
     }
@@ -657,14 +665,7 @@ async function uploadImage(imageData) {
       // 递归替换对象中的占位符
       function replaceInObject(obj) {
         if (typeof obj === 'string') {
-          // 特殊处理：如果包含 {{imageBase64}} 且是数组，替换为第一个图片
-          let result = replacePlaceholders(obj);
-          // 如果是多图且字符串中有 imageBase64，可能需要特殊处理
-          if (Array.isArray(imageBase64) && obj.includes('{{imageBase64}}')) {
-            // 对于多图，使用第一张图片的 base64
-            result = result;
-          }
-          return result;
+          return replacePlaceholders(obj);
         } else if (Array.isArray(obj)) {
           return obj.map(item => replaceInObject(item));
         } else if (obj && typeof obj === 'object') {
@@ -678,16 +679,6 @@ async function uploadImage(imageData) {
       }
       
       bodyObj = replaceInObject(bodyObj);
-      
-      // 如果是多图，将所有图片的 base64 添加到 files 数组中（如果配置中有这个字段）
-      if (Array.isArray(imageBase64) && bodyObj.inputs && bodyObj.inputs.files) {
-        bodyObj.inputs.files = imageBase64.map((base64, index) => ({
-          type: 'image',
-          transfer_method: 'local_file',
-          upload_file_id: '',
-          url: `data:image/png;base64,${base64}`
-        }));
-      }
       
       body = JSON.stringify(bodyObj);
       requestHeaders['Content-Type'] = 'application/json';
