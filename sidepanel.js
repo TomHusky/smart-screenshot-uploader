@@ -768,6 +768,12 @@ function displayAnalysisResult(data) {
   // 兼容不同的响应格式
   if (typeof data === 'string') {
     analysisText = data;
+  } else if (data.outputs && data.outputs.text) {
+    // 处理 workflow 返回格式: { outputs: { text: "..." } }
+    analysisText = data.outputs.text;
+  } else if (data.data && data.data.outputs && data.data.outputs.text) {
+    // 处理嵌套的 workflow 返回格式: { data: { outputs: { text: "..." } } }
+    analysisText = data.data.outputs.text;
   } else if (data.answer) {
     analysisText = data.answer;
   } else if (data.result) {

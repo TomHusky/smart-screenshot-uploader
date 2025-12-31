@@ -724,9 +724,6 @@ async function uploadImage(imageData, userQuery = '') {
       data: responseData
     };
   } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error(`请求超时 (${elapsedTime}秒)`);
-    }
     throw new Error('上传失败: ' + error.message);
   }
 }
