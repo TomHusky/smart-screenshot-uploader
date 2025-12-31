@@ -585,6 +585,12 @@ async function uploadImage(imageData, userQuery = '') {
     // 构建请求
     const { method, url, headers, timeout, jsonBody } = httpConfig;
     
+    // 调试：输出超时设置
+    console.log('=== Upload Image Debug ===');
+    console.log('Timeout setting:', timeout, 'seconds (type:', typeof timeout, ')');
+    console.log('Timeout from httpConfig.timeout:', httpConfig.timeout);
+    console.log('Full httpConfig:', JSON.stringify(httpConfig, null, 2));
+    
     // 准备占位符数据
     const timestamp = Date.now();
     
@@ -687,17 +693,18 @@ async function uploadImage(imageData, userQuery = '') {
     
     // 发送请求
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), (timeout || 30) * 1000);
-    
+    const timeoutMs = (timeout || 30) * 1000;
+    console.log('Setting fetch timeout to:', timeoutMs, 'ms (', timeout, 'seconds )');
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
     const response = await fetch(url, {
       method: method || 'POST',
       headers: requestHeaders,
       body: body,
       signal: controller.signal
     });
-    
     clearTimeout(timeoutId);
-    
     // 解析响应
     const responseText = await response.text();
     let responseData;
@@ -717,9 +724,8 @@ async function uploadImage(imageData, userQuery = '') {
       data: responseData
     };
   } catch (error) {
-    console.error('Upload error:', error);
     if (error.name === 'AbortError') {
-      throw new Error('请求超时');
+      throw new Error(`请求超时 (${elapsedTime}秒)`);
     }
     throw new Error('上传失败: ' + error.message);
   }

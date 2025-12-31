@@ -114,6 +114,8 @@ async function loadScenes() {
         if (scenario) {
           // 切换到新场景的配置
           await chrome.storage.sync.set({ httpConfig: scenario.config });
+          console.log('🔄 Switched to scene:', scenario.name);
+          console.log('   - Timeout:', scenario.config.timeout, 'seconds');
           showStatus(`✨ 已切换到场景: ${scenario.name}`, 'success');
         }
       }
@@ -121,6 +123,32 @@ async function loadScenes() {
     
     // 存储场景列表供其他函数使用
     scenes = scenarios;
+    
+    // 确保当前选中的场景配置已加载到 httpConfig
+    if (scenarios.length > 0) {
+      const currentScenarioId = result.currentScenarioId;
+      let activeScenario = null;
+      
+      if (currentScenarioId) {
+        activeScenario = scenarios.find(s => s.id === currentScenarioId);
+      }
+      
+      // 如果没有找到当前场景，使用默认场景
+      if (!activeScenario) {
+        activeScenario = scenarios.find(s => s.isDefault) || scenarios[0];
+      }
+      
+      // 加载当前场景的配置到 httpConfig
+      if (activeScenario && activeScenario.config) {
+        await chrome.storage.sync.set({ 
+          httpConfig: activeScenario.config,
+          currentScenarioId: activeScenario.id
+        });
+        console.log('✅ Loaded scene config:', activeScenario.name);
+        console.log('   - Timeout:', activeScenario.config.timeout, 'seconds (type:', typeof activeScenario.config.timeout, ')');
+        console.log('   - URL:', activeScenario.config.url);
+      }
+    }
     
   } catch (error) {
     console.error('Load scenes error:', error);
